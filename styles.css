@@ -1,0 +1,43 @@
+/* Note AI Assistant */
+
+.note-ai-status {
+  opacity: 0.85;
+  font-size: 0.85em;
+  color: var(--text-accent);
+}
+
+.note-ai-choice-item {
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.note-ai-choice-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.note-ai-ask-actions {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.note-ai-ask-output {
+  max-height: 320px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: var(--font-ui-small);
+  background: var(--background-secondary);
+}
+
+.note-ai-prompt-input {
+  min-height: 90px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+}

@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-ai-assistant",
+  "name": "Obsidian AI Assistant",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "在 Obsidian 写作时调用大模型（DeepSeek / OpenAI / Kimi / Ollama 等 OpenAI 兼容接口）自动生成、优化、总结、翻译笔记，体验类似 Notion AI。",
+  "author": "Note AI",
+  "isDesktopOnly": false
+}

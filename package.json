@@ -1,0 +1,33 @@
+{
+  "name": "obsidian-ai-assistant",
+  "version": "0.1.0",
+  "description": "Obsidian plugin: AI-assisted note writing with configurable OpenAI-compatible LLMs.",
+  "packageManager": "pnpm@11.20.0",
+  "main": "dist/main.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && node scripts/prepare-dist.mjs",
+    "test": "node esbuild.test.config.mjs && node --test test/all.test.cjs",
+    "pack": "pnpm pack --dry-run",
+    "prepublishOnly": "pnpm run build && pnpm test"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "ai",
+    "llm",
+    "deepseek"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "builtin-modules": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.13.1",
+    "tslib": "^2.8.1",
+    "typescript": "^7.0.2"
+  }
+}

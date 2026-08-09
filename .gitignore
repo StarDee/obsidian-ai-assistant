@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+main.js.map
+*.tsbuildinfo
+data.json
+.obsidian/
+test/*.cjs
+dist/
