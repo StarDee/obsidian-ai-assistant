@@ -36,6 +36,14 @@
   background: var(--background-secondary);
 }
 
+.note-ai-ask-context-info {
+  margin: 4px 0 8px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  border-left: 3px solid var(--background-modifier-border);
+  padding-left: 8px;
+}
+
 .note-ai-prompt-input {
   min-height: 90px;
   font-family: var(--font-monospace);

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer, IncomingMessage, Server, ServerResponse } from "node:http";
 import { test } from "node:test";
+import { buildAskUserMessage, describeAskContext, sanitizeContextMaxChars } from "../src/ask-context";
 import { runAction } from "../src/editor-actions";
 import { buildChatUrl, chatComplete, LLMError, streamChat } from "../src/llm";
 import { DEFAULT_SETTINGS, NoteAISettings } from "../src/settings";
@@ -232,4 +233,125 @@ test("非流式一次性替换", async () => {
   await runAction(createMockApp(), editor, "improve", settings, () => {});
 
   assert.equal(editor.text, "XYZ world");
+});
+
+test("sanitizeContextMaxChars 对 0 / NaN / 负数 / 字符串兜底", () => {
+  assert.equal(sanitizeContextMaxChars(0), 8000);
+  assert.equal(sanitizeContextMaxChars(Number.NaN), 8000);
+  assert.equal(sanitizeContextMaxChars(-5), 8000);
+  assert.equal(sanitizeContextMaxChars("3000"), 3000);
+  assert.equal(sanitizeContextMaxChars(5000), 5000);
+  assert.equal(sanitizeContextMaxChars(undefined), 8000);
+});
+
+test("Ask AI：有选区时优先附带选中内容，而不是整篇笔记", () => {
+  const message = buildAskUserMessage({
+    includeContext: true,
+    contextMaxChars: 8000,
+    noteTitle: "测试笔记",
+    noteContent: "这是整篇笔记的正文，不应该成为核心上下文。",
+    selection: "用户选中的关键段落",
+    question: "请总结这段内容",
+  });
+  assert.match(message, /测试笔记/);
+  assert.match(message, /你选中的内容/);
+  assert.match(message, /用户选中的关键段落/);
+  assert.doesNotMatch(message, /这是整篇笔记的正文/);
+  assert.match(message, /请总结这段内容/);
+});
+
+test("Ask AI：无选区时附带整篇笔记内容", () => {
+  const message = buildAskUserMessage({
+    includeContext: true,
+    contextMaxChars: 8000,
+    noteTitle: "测试笔记",
+    noteContent: "笔记正文第一行\n笔记正文第二行",
+    selection: "",
+    question: "帮我写个开头",
+  });
+  assert.match(message, /以下是当前笔记《测试笔记》的内容/);
+  assert.match(message, /笔记正文第一行/);
+  assert.match(message, /笔记正文第二行/);
+  assert.match(message, /帮我写个开头/);
+});
+
+test("Ask AI：contextMaxChars 为 0 时不会静默丢失上下文", () => {
+  const message = buildAskUserMessage({
+    includeContext: true,
+    contextMaxChars: 0,
+    noteTitle: "测试笔记",
+    noteContent: "即使设置异常，正文也必须被发送。",
+    selection: "",
+    question: "你能看到笔记吗",
+  });
+  assert.match(message, /即使设置异常，正文也必须被发送/);
+});
+
+test("Ask AI：includeContext 关闭时只发送问题", () => {
+  const message = buildAskUserMessage({
+    includeContext: false,
+    contextMaxChars: 8000,
+    noteTitle: "测试笔记",
+    noteContent: "不应出现的正文",
+    selection: "",
+    question: "单独的问题",
+  });
+  assert.equal(message, "单独的问题");
+});
+
+test("Ask AI：空笔记时明确告知模型内容为空，而非静默丢弃", () => {
+  const message = buildAskUserMessage({
+    includeContext: true,
+    contextMaxChars: 8000,
+    noteTitle: "空笔记",
+    noteContent: "   ",
+    selection: "",
+    question: "这篇笔记讲了什么",
+  });
+  assert.match(message, /当前为空/);
+  assert.match(message, /（空）/);
+  assert.match(message, /这篇笔记讲了什么/);
+});
+
+test("describeAskContext 展示实际附带范围，方便发送前确认", () => {
+  assert.match(
+    describeAskContext({
+      includeContext: true,
+      contextMaxChars: 8000,
+      noteTitle: "长笔记",
+      noteContent: "x".repeat(100),
+      selection: "",
+    }),
+    /长笔记.*100 字/
+  );
+  assert.match(
+    describeAskContext({
+      includeContext: true,
+      contextMaxChars: 50,
+      noteTitle: "长笔记",
+      noteContent: "x".repeat(100),
+      selection: "",
+    }),
+    /已截取前 50 字/
+  );
+  assert.match(
+    describeAskContext({
+      includeContext: true,
+      contextMaxChars: 8000,
+      noteTitle: "笔记",
+      noteContent: "正文",
+      selection: "选中段落",
+    }),
+    /你选中的内容.*共 4 字.*上限 8000 字/
+  );
+  assert.match(
+    describeAskContext({
+      includeContext: false,
+      contextMaxChars: 8000,
+      noteTitle: "笔记",
+      noteContent: "正文",
+      selection: "",
+    }),
+    /仅发送你的问题/
+  );
 });

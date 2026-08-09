@@ -198,7 +198,7 @@ export class NoteAISettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Ask AI 自动附带笔记内容")
-      .setDesc("开启后，Ask AI 提问时自动把当前笔记内容作为上下文发送给模型，无需手动选中文本；关闭则只发送你的问题。")
+      .setDesc("开启后，Ask AI 提问时会自动附带上下文：有选中文本时优先附带选中内容，否则附带当前笔记内容；关闭则只发送你的问题。")
       .addToggle((toggle) => {
         toggle.setValue(this.plugin.settings.askIncludeContext);
         toggle.onChange(async (value) => {
@@ -209,7 +209,7 @@ export class NoteAISettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("上下文最大字符数")
-      .setDesc("作为上下文发送给模型的笔记内容上限，避免超出模型上下文窗口。")
+      .setDesc("作为上下文发送给模型的笔记/选中内容上限，避免超出模型上下文窗口；设置异常时会自动使用默认值 8000。")
       .addText((text) => {
         text.inputEl.type = "number";
         text.inputEl.setAttribute("min", "100");

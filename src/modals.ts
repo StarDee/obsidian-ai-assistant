@@ -45,6 +45,8 @@ export class LanguageModal extends ChoiceModal<string> {
 }
 
 export interface AskCallbacks {
+  /** 弹窗中展示的上下文附带说明（如“将附带笔记《xxx》内容（123 字）”） */
+  contextInfo?: string;
   onAsk: (question: string, onDelta: (chunk: string) => void, signal: AbortSignal) => Promise<void>;
   onInsert: (answer: string) => void;
 }
@@ -68,9 +70,15 @@ export class AskAIModal extends Modal {
     contentEl.empty();
     contentEl.createEl("h3", { text: "Ask AI" });
     contentEl.createEl("p", {
-      text: "向模型提问，或描述你想生成的内容（未选中文本时也会自动附带当前笔记内容）。例如：“帮我为这篇笔记写一个开头”。",
+      text: "向模型提问，或描述你想生成的内容。有选中文本时优先附带选中内容，否则附带当前笔记。例如：“帮我为这篇笔记写一个开头”。",
       cls: "setting-item-description",
     });
+    if (this.callbacks.contextInfo) {
+      contentEl.createEl("p", {
+        text: this.callbacks.contextInfo,
+        cls: "note-ai-ask-context-info",
+      });
+    }
 
     new Setting(contentEl)
       .setName("问题 / 指令")

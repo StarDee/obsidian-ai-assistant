@@ -1,5 +1,6 @@
 import { Editor, MarkdownView, Menu, Notice, Plugin } from "obsidian";
 import { ACTION_DEFS, ACTION_ORDER, ActionId } from "./actions";
+import { BuildAskMessageInput, buildAskUserMessage, describeAskContext, sanitizeContextMaxChars } from "./ask-context";
 import { runAction } from "./editor-actions";
 import { chatComplete, streamChat } from "./llm";
 import { AskAIModal, LanguageModal, ToneModal } from "./modals";
@@ -25,6 +26,13 @@ export default class NoteAIPlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    // 旧版本或手动编辑 data.json 可能写入 0 / NaN / 字符串，
+    // 这些值会把笔记上下文截成空串，导致模型“看不到”笔记，必须兜底。
+    this.settings.contextMaxChars = sanitizeContextMaxChars(
+      this.settings.contextMaxChars,
+      DEFAULT_SETTINGS.contextMaxChars
+    );
+    this.settings.askIncludeContext = !!this.settings.askIncludeContext;
   }
 
   async saveSettings(): Promise<void> {
@@ -126,9 +134,21 @@ export default class NoteAIPlugin extends Plugin {
       new Notice("已有 AI 操作正在进行，请稍候");
       return;
     }
+    // 弹窗打开时一次性采集上下文，保证弹窗展示的信息与实际发送的内容一致
+    const file = this.app.workspace.getActiveFile();
+    const contextInput: BuildAskMessageInput = {
+      includeContext: this.settings.askIncludeContext,
+      contextMaxChars: this.settings.contextMaxChars,
+      noteTitle: file?.basename ?? null,
+      noteContent: editor.getValue(),
+      selection: editor.getSelection(),
+      question: "",
+    };
+    const contextInfo = describeAskContext(contextInput);
     new AskAIModal(this.app, {
+      contextInfo,
       onAsk: async (question, onDelta, signal) => {
-        const userContent = this.buildAskUserMessage(editor, question);
+        const userContent = buildAskUserMessage({ ...contextInput, question });
         await this.runExclusive(async () => {
           for await (const chunk of streamChat({
             baseUrl: this.settings.baseUrl,
@@ -173,15 +193,4 @@ export default class NoteAIPlugin extends Plugin {
     }
   }
 
-  private buildAskUserMessage(editor: Editor, question: string): string {
-    if (!this.settings.askIncludeContext) return question;
-    const file = this.app.workspace.getActiveFile();
-    const content = editor.getValue().slice(0, this.settings.contextMaxChars).trim();
-    if (!content) return question;
-    return (
-      `以下是当前笔记《${file?.basename ?? "未命名笔记"}》的内容：\n\n` +
-      `${content}\n\n` +
-      `请基于以上笔记内容回答或执行以下指令（若与笔记无关可直接回答）：\n\n${question}`
-    );
-  }
 }
