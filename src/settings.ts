@@ -81,7 +81,7 @@ export class NoteAISettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Note AI Assistant" });
+    containerEl.createEl("h2", { text: "Obsidian AI Assistant" });
     containerEl.createEl("p", {
       text: "选择一个 OpenAI 兼容的大模型服务，在写作时用 AI 生成或优化笔记。API Key 仅保存在本机 vault 的 data.json 中。",
       cls: "setting-item-description",
